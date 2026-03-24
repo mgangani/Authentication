@@ -51,7 +51,7 @@ export const login = async (req, res) => {
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: true,
-    maxAge: 1000 * 2,
+    maxAge: 1000 * 60 * 60,
   });
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
@@ -128,7 +128,7 @@ export const forgotPassword = async (req, res) => {
     "Reset Password",
     `<p>You requested a password reset</p><p>Click <a href="http://localhost:3000/reset/${token}">here</a> to set a new password</p>`,
   );
-  return res.status(200).json({ message: "Password reset email sent", token });
+  return res.status(200).json({ message: "Password reset email sent" });
 };
 
 export const updateUser = async (req, res) => {

@@ -36,7 +36,7 @@ export const verifyJWT = async (req, res, next) => {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
-      maxAge: 2 * 1000,
+      maxAge: 1000 * 60 * 60,
     });
 
     req.user = user;
