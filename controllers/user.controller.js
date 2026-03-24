@@ -105,7 +105,7 @@ export const forgotPassword = async (req, res) => {
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
-  const token = generateJWT(user._id);
+  const token = generateAccessToken(user._id);
   await sendEmail(
     email,
     "Reset Password",
