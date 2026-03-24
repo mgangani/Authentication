@@ -12,7 +12,7 @@ export const verifyJWT = async (req, res, next) => {
     if (accessToken) {
       try {
         const decoded = verifyAccessToken(accessToken);
-        req.user = decoded.userId;
+        req.user = decoded;
         return next();
       } catch (accessError) {
       }
@@ -31,7 +31,7 @@ export const verifyJWT = async (req, res, next) => {
     }
 
       console.log("Creating new access token")
-    const newAccessToken = generateAccessToken(user._id);
+    const newAccessToken = generateAccessToken(user);
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: true,
@@ -39,7 +39,7 @@ export const verifyJWT = async (req, res, next) => {
       maxAge: 2 * 1000,
     });
 
-    req.user = user._id;
+    req.user = user;
     return next();
   } catch (err) {
     return res.status(401).json({ message: "Unauthorized" });

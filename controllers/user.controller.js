@@ -1,6 +1,11 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken, verifyAccessToken } from "../utils/generateJWT.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+  verifyAccessToken,
+} from "../utils/generateJWT.js";
 import { sendEmail } from "../utils/mailer.js";
 
 export const signup = async (req, res) => {
@@ -15,6 +20,7 @@ export const signup = async (req, res) => {
       name,
       email,
       password: hash,
+      role: "employee",
     });
     return res.status(201).json({
       message: "User created successfully",
@@ -35,11 +41,10 @@ export const login = async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
   const doMatch = await bcrypt.compare(password, user.password);
-  console.log("doMatch", doMatch);
   if (!doMatch) {
     return res.status(400).json({ message: "Invalid password" });
   }
-  const accessToken = generateAccessToken(user._id);
+  const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user._id);
   user.refreshToken = refreshToken;
   await user.save();
@@ -53,7 +58,7 @@ export const login = async (req, res) => {
     secure: true,
     maxAge: 1000 * 60 * 60 * 24 * 7,
   });
-  return res.status(200).json({ message: "Login successful", accessToken, refreshToken });
+  return res.status(200).json({ message: "Login successful", user });
 };
 
 export const logout = async (req, res) => {
@@ -76,10 +81,22 @@ export const logout = async (req, res) => {
 };
 
 export const getProfile = async (req, res) => {
-  const user = await User.findById(req.user).select("-password");
+  console.log("getProfile controller", req.user);
+  const user = await User.findById(req.user.id).select("-password");
   return res.status(200).json({
     message: "Profile fetched successfully",
     user,
+  });
+};
+
+export const getUsers = async (req, res) => {
+  const users = await User.find().select("-password");
+  if (!users) {
+    return res.status(400).json({ message: "No users found" });
+  }
+  return res.status(200).json({
+    message: "Users fetched successfully",
+    users,
   });
 };
 
@@ -105,11 +122,25 @@ export const forgotPassword = async (req, res) => {
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
-  const token = generateAccessToken(user._id);
+  const token = generateAccessToken(user);
   await sendEmail(
     email,
     "Reset Password",
     `<p>You requested a password reset</p><p>Click <a href="http://localhost:3000/reset/${token}">here</a> to set a new password</p>`,
   );
   return res.status(200).json({ message: "Password reset email sent", token });
+};
+
+export const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { name, email, role } = req.body;
+  const user = await User.findByIdAndUpdate(
+    id,
+    { name, email, role },
+    { new: true },
+  );
+  if (!user) {
+    return res.status(400).json({ message: "User not found" });
+  }
+  return res.status(200).json({ message: "User updated successfully", user });
 };
