@@ -50,12 +50,10 @@ export const login = async (req, res) => {
   await user.save();
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
-    secure: true,
     maxAge: 1000 * 60 * 60,
   });
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true,
     maxAge: 1000 * 60 * 60 * 24 * 7,
   });
   return res.status(200).json({
