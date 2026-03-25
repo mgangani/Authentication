@@ -1,0 +1,13 @@
+services:
+  auth-practice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6000:6000"
+    env_file:
+      - .env
+    volumes:
+      # Ensure dotenv can find the file at runtime (your Docker image excludes .env).
+      - .env:/app/.env:ro
+    restart: unless-stopped
