@@ -8,10 +8,18 @@ import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 
 const app = express();
+const start = async () => {
+  await connectDB();
+
+  app.listen(3000, () => {
+    console.log("Server is running on port 3000");
+  });
+};
+
+start();
 
 app.use(express.json());
 app.use(cookieParser());
-await connectDB();
 
 app.use(
   "/api-docs",
@@ -28,6 +36,3 @@ app.get("/api-docs.json", (_req, res) => {
 
 app.use("/api/users", userRoutes);
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
-});
