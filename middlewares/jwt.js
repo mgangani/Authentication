@@ -33,7 +33,7 @@ export const verifyJWT = async (req, res, next) => {
     const newAccessToken = generateAccessToken(user);
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
-      sameSite: "strict",
+      // sameSite: "strict",
       maxAge: 1000 * 60 * 60,
     });
 
