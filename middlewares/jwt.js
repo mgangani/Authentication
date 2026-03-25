@@ -27,10 +27,9 @@ export const verifyJWT = async (req, res, next) => {
     const user = await User.findById(decodedRefresh.userId);
 
     if (!user || user.refreshToken !== refreshToken) {
-      return res.status(403).json({ message: "Invalid refresh token" });
+      return res.status(401).json({ message: "Invalid refresh token" });
     }
 
-      console.log("Creating new access token")
     const newAccessToken = generateAccessToken(user);
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,

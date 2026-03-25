@@ -112,6 +112,11 @@ const swaggerDefinition = {
             format: "password",
             example: "StrongPassword123",
           },
+          role: {
+            type: "string",
+            enum: ["admin", "manager", "employee"],
+            example: "employee",
+          },
         },
       },
       LoginRequest: {
@@ -180,6 +185,31 @@ const swaggerDefinition = {
           },
         },
       },
+      ValidationErrorResponse: {
+        type: "object",
+        properties: {
+          message: {
+            type: "string",
+            example: "Validation failed",
+          },
+          errors: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                field: {
+                  type: "string",
+                  example: "email",
+                },
+                message: {
+                  type: "string",
+                  example: "Invalid email",
+                },
+              },
+            },
+          },
+        },
+      },
       ErrorResponse: {
         type: "object",
         properties: {
@@ -211,7 +241,34 @@ const swaggerDefinition = {
               "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.refresh.token",
           },
           user: {
-            $ref: "#/components/schemas/User",
+            $ref: "#/components/schemas/PublicUser",
+          },
+        },
+      },
+      UserResponse: {
+        type: "object",
+        properties: {
+          message: {
+            type: "string",
+            example: "User created successfully",
+          },
+          user: {
+            $ref: "#/components/schemas/PublicUser",
+          },
+        },
+      },
+      UsersListResponse: {
+        type: "object",
+        properties: {
+          message: {
+            type: "string",
+            example: "Users fetched successfully",
+          },
+          users: {
+            type: "array",
+            items: {
+              $ref: "#/components/schemas/PublicUser",
+            },
           },
         },
       },

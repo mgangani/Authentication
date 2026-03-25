@@ -13,6 +13,15 @@ import {
 import { verifyJWT } from "../middlewares/jwt.js";
 import { authorize, authorizeOwnerOr } from "../middlewares/authorize.js";
 import PERMISSIONS from "../config/permissions.js";
+import { validate } from "../middlewares/validation.middleware.js";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordSchema,
+  setupAdminSchema,
+  signupSchema,
+  updateUserSchema,
+} from "../validators/user.schema.js";
 
 const router = express.Router();
 
@@ -35,8 +44,18 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserResponse'
  *       400:
- *         description: User already exists
+ *         description: Validation failed or user already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/ValidationErrorResponse'
+ *                 - $ref: '#/components/schemas/ErrorResponse'
  *       401:
  *         description: Unauthorized
  *       403:
@@ -44,7 +63,13 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.post("/signup", verifyJWT, authorize(PERMISSIONS.USERS_CREATE), signup);
+router.post(
+  "/signup",
+  verifyJWT,
+  authorize(PERMISSIONS.USERS_CREATE),
+  validate(signupSchema),
+  signup,
+);
 /**
  * @swagger
  * /api/users/setup-admin:
@@ -57,18 +82,27 @@ router.post("/signup", verifyJWT, authorize(PERMISSIONS.USERS_CREATE), signup);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/SignupRequest'
+ *             allOf:
+ *               - $ref: '#/components/schemas/SignupRequest'
+ *             example:
+ *               name: Super Admin
+ *               email: admin@example.com
+ *               password: StrongPassword123
  *     responses:
  *       201:
  *         description: Initial admin created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserResponse'
  *       400:
- *         description: User already exists
+ *         description: Validation failed or user already exists
  *       403:
  *         description: Initial admin already created
  *       500:
  *         description: Server error
  */
-router.post("/setup-admin", createInitialAdmin);
+router.post("/setup-admin", validate(setupAdminSchema), createInitialAdmin);
 /**
  * @swagger
  * /api/users:
@@ -81,6 +115,10 @@ router.post("/setup-admin", createInitialAdmin);
  *     responses:
  *       200:
  *         description: Users fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UsersListResponse'
  *       401:
  *         description: Unauthorized
  *       403:
@@ -108,9 +146,13 @@ router.get("/", verifyJWT, authorize(PERMISSIONS.USERS_VIEW), getUsers);
  *             schema:
  *               $ref: '#/components/schemas/LoginResponse'
  *       400:
- *         description: Invalid credentials
+ *         description: Validation failed
+ *       401:
+ *         description: Invalid email or password
+ *       500:
+ *         description: Server error
  */
-router.post("/login", login);
+router.post("/login", validate(loginSchema), login);
 /**
  * @swagger
  * /api/users/logout:
@@ -123,8 +165,14 @@ router.post("/login", login);
  *     responses:
  *       200:
  *         description: Logged out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageResponse'
  *       401:
  *         description: Unauthorized
+ *       500:
+ *         description: Server error
  */
 router.post("/logout", verifyJWT, logout);
 /**
@@ -139,10 +187,18 @@ router.post("/logout", verifyJWT, logout);
  *     responses:
  *       200:
  *         description: Profile fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserResponse'
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
  */
 router.get(
   "/profile",
@@ -175,17 +231,26 @@ router.get(
  *     responses:
  *       200:
  *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/UserResponse'
  *       400:
- *         description: User not found
+ *         description: Validation failed
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
  */
 router.put(
   "/:id",
   verifyJWT,
   authorizeOwnerOr(PERMISSIONS.USERS_EDIT),
+  validate(updateUserSchema),
   updateUser,
 );
 
@@ -212,10 +277,20 @@ router.put(
  *     responses:
  *       200:
  *         description: Password reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageResponse'
  *       400:
- *         description: Invalid token
+ *         description: Validation failed or token is invalid/expired
+ *       404:
+ *         description: User not found
  */
-router.post("/reset-password/:token", resetPassword);
+router.post(
+  "/reset-password/:token",
+  validate(resetPasswordSchema),
+  resetPassword,
+);
 /**
  * @swagger
  * /api/users/forgot-password:
@@ -231,9 +306,17 @@ router.post("/reset-password/:token", resetPassword);
  *     responses:
  *       200:
  *         description: Password reset email sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageResponse'
  *       400:
+ *         description: Validation failed
+ *       404:
  *         description: User not found
+ *       500:
+ *         description: Server error
  */
-router.post("/forgot-password", forgotPassword);
+router.post("/forgot-password", validate(forgotPasswordSchema), forgotPassword);
 
 export default router;
