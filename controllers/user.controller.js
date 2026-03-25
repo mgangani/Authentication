@@ -129,7 +129,7 @@ export const forgotPassword = async (req, res) => {
   await sendEmail(
     email,
     "Reset Password",
-    `<p>You requested a password reset</p><p>Click <a href="http://localhost:6000/reset/${token}">here</a> to set a new password</p>`,
+    `<p>You requested a password reset</p><p>Click <a href="http://localhost:5000/reset/${token}">here</a> to set a new password</p>`,
   );
   return res.status(200).json({ message: "Password reset email sent" });
 };
