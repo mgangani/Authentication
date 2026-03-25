@@ -10,7 +10,8 @@ import { sendEmail } from "../utils/mailer.js";
 
 export const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email: userEmail, password, role } = req.body;
+    const email = userEmail.toLowerCase();
     const exists = await User.exists({ email });
     if (exists) {
       return res.status(400).json({ message: "User already exists" });
@@ -20,7 +21,7 @@ export const signup = async (req, res) => {
       name,
       email,
       password: hash,
-      role: "employee",
+      role: role || "employee",
     });
     return res.status(201).json({
       message: "User created successfully",
@@ -35,7 +36,8 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email: userEmail, password } = req.body;
+  const email = userEmail.toLowerCase();
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(400).json({ message: "User not found" });
@@ -120,7 +122,8 @@ export const resetPassword = async (req, res) => {
 };
 
 export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
+  const { email: userEmail } = req.body;
+  const email = userEmail.toLowerCase();
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(400).json({ message: "User not found" });
@@ -146,4 +149,40 @@ export const updateUser = async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
   return res.status(200).json({ message: "User updated successfully", user });
+};
+
+export const createInitialAdmin = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const userCount = await User.countDocuments();
+
+    if (userCount > 0) {
+      return res.status(403).json({
+        message: "Initial admin already created",
+      });
+    }
+
+    const exists = await User.exists({ email });
+    if (exists) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name,
+      email,
+      password: hash,
+      role: "admin",
+    });
+
+    return res.status(201).json({
+      message: "Initial admin created successfully",
+      user,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "Error creating initial admin",
+      error: err.message,
+    });
+  }
 };

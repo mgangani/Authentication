@@ -8,6 +8,7 @@ import {
   forgotPassword,
   updateUser,
   getUsers,
+  createInitialAdmin,
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/jwt.js";
 import { authorize, authorizeOwnerOr } from "../middlewares/authorize.js";
@@ -44,6 +45,30 @@ const router = express.Router();
  *         description: Server error
  */
 router.post("/signup", verifyJWT, authorize(PERMISSIONS.USERS_CREATE), signup);
+/**
+ * @swagger
+ * /api/users/setup-admin:
+ *   post:
+ *     summary: Create the first admin user
+ *     description: This endpoint works only when there are zero users in the database.
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SignupRequest'
+ *     responses:
+ *       201:
+ *         description: Initial admin created successfully
+ *       400:
+ *         description: User already exists
+ *       403:
+ *         description: Initial admin already created
+ *       500:
+ *         description: Server error
+ */
+router.post("/setup-admin", createInitialAdmin);
 /**
  * @swagger
  * /api/users:
