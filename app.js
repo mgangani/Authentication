@@ -8,8 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 
 const app = express();
-const PORT = Number(process.env.PORT) || 6000;
-
+const PORT = Number(process.env.PORT) || 5000;
 app.use(express.json());
 app.use(cookieParser());
 
