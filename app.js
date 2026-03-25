@@ -8,15 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 
 const app = express();
-const start = async () => {
-  await connectDB();
-
-  app.listen(6000, () => {
-    console.log("Server is running on port 6000");
-  });
-};
-
-start();
+const PORT = Number(process.env.PORT) || 6000;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -36,3 +28,16 @@ app.get("/api-docs.json", (_req, res) => {
 
 app.use("/api/users", userRoutes);
 
+const start = async () => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+
+  try {
+    await connectDB();
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message);
+  }
+};
+
+start();
