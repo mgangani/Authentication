@@ -2,25 +2,44 @@
 
 ## Overview
 
-This backend runs on port `5000` and exposes the auth and user APIs under:
+This backend runs on port `5000`.
+
+Base API URL:
 
 - `http://localhost:5000/api/users`
 
-Swagger documentation is available at:
+Swagger docs:
 
 - `http://localhost:5000/api-docs`
 
 ## Prerequisites
 
-Make sure you have:
+Before starting, make sure you have:
 
 - Docker installed
 - Docker Compose installed
-- Access to the backend `.env` values from the backend team
+- The backend `.env` values from the backend team
 
-## Required Environment Variables
+## Step 1: Create a Working Folder
 
-Create a `.env` file in the project root with these keys:
+Create a folder for the backend setup and move into it:
+
+```bash
+mkdir auth-practice-backend
+cd auth-practice-backend
+```
+
+If the backend team shared the source code, place the project files in this folder.
+
+## Step 2: Prepare the Environment File
+
+Create a `.env` file in the project root:
+
+```bash
+touch .env
+```
+
+Add these values:
 
 ```env
 PORT=5000
@@ -34,43 +53,64 @@ ADMIN_PASSWORD=<initial-admin-password>
 
 Notes:
 
-- `SENDGRID_API_KEY` is required only if you want to test the forgot-password email flow.
-- `MONGODB_URI` must point to a working MongoDB database before the app can start.
-- When the database has no users, the server creates the first admin automatically on startup using `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`.
+- `MONGODB_URI` must point to a working MongoDB instance.
+- `JWT_SECRET` is required for both access token and refresh token signing.
+- `SENDGRID_API_KEY` is only needed if you want to test forgot-password email delivery.
+- `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` are used only for initial admin bootstrap on an empty database.
 
-## If You Are Given a Prebuilt Docker Image
+## Step 3: Pull the Docker Image
 
-If the backend team shares a published image instead of the source build flow, use:
+If you were given a prebuilt image, pull it first:
 
 ```bash
-For: pull the docker image
-docker pull docker pull meetgangani11/auth-app:latest
-
-For: Run the image
-docker run -p 5000:5000 --env-file .env meetgangani11/auth-app
+docker pull meetgangani11/auth-app:latest
 ```
 
-## First-Time Setup
+## Step 4: Start the Backend
 
-On a fresh database, the backend creates the initial admin user automatically during startup.
+If you are using the prebuilt image, run:
 
-Set these env vars before starting the server:
-
-```env
-ADMIN_NAME=Super Admin
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=StrongPassword123
+```bash
+docker run -p 5000:5000 --env-file .env meetgangani11/auth-app:latest
 ```
+
+If you are using the source code in this repository, run:
+
+```bash
+docker compose up --build
+```
+
+The backend will start on:
+
+- `http://localhost:5000`
+
+## Step 5: Understand First Startup Behavior
+
+On the first startup with an empty database, the server automatically creates the initial admin user using:
+
+- `ADMIN_NAME`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
 
 Important:
 
-- This bootstrap runs only when there are `0` users in the database.
-- If users already exist, the server does not create another admin automatically.
-- If the database is empty and any of the `ADMIN_*` values are missing, the server startup fails until they are provided.
+- This happens only when the database has `0` users.
+- If users already exist, the bootstrap admin is not created again.
+- If the database is empty and any `ADMIN_*` value is missing, startup fails.
 
-## Login After Admin Creation
+## Step 6: Confirm the Backend Is Running
 
-After the server boots and creates the admin, log in with:
+Open the Swagger docs in the browser:
+
+- `http://localhost:5000/api-docs`
+
+If Swagger loads, the backend is running correctly.
+
+## Step 7: Log In
+
+Use the bootstrap admin credentials to log in.
+
+Endpoint:
 
 - `POST http://localhost:5000/api/users/login`
 
@@ -94,41 +134,90 @@ curl --request POST http://localhost:5000/api/users/login \
   }'
 ```
 
-The login response returns:
+Successful login returns:
 
 - `accessToken`
 - `refreshToken`
 - `user`
 
-Use the `accessToken` in the `Authorization` header for protected routes:
+## Step 8: Use the Access Token for Protected APIs
 
-```bash
+Protected routes require the access token in the `Authorization` header:
+
+```http
 Authorization: Bearer <accessToken>
 ```
 
-When the access token expires, call `POST /api/users/refresh-token` with the current `refreshToken` to receive a new access token and refresh token pair.
+Example:
 
-## Common API Endpoints For Frontend Work
+```bash
+curl http://localhost:5000/api/users/profile \
+  --header "Authorization: Bearer <accessToken>"
+```
 
-- `POST /api/users/login` - login
-- `POST /api/users/refresh-token` - rotate access and refresh tokens
-- `GET /api/users/profile` - get current logged-in user
+## Step 9: Refresh Tokens When the Access Token Expires
+
+There is no automatic refresh in the backend middleware.
+
+When the access token expires, call:
+
+- `POST http://localhost:5000/api/users/refresh-token`
+
+Request body:
+
+```json
+{
+  "refreshToken": "<current-refresh-token>"
+}
+```
+
+Example:
+
+```bash
+curl --request POST http://localhost:5000/api/users/refresh-token \
+  --header "Content-Type: application/json" \
+  --data '{
+    "refreshToken": "<current-refresh-token>"
+  }'
+```
+
+Successful refresh returns:
+
+- new `accessToken`
+- new `refreshToken`
+- `user`
+
+Important:
+
+- Always replace the old stored tokens with the newly returned tokens.
+- If refresh fails with `401`, send the user back to login.
+
+## Common API Endpoints
+
+- `POST /api/users/login` - log in
+- `POST /api/users/refresh-token` - get a new access token and refresh token
+- `POST /api/users/logout` - log out
+- `GET /api/users/profile` - get current user profile
 - `GET /api/users` - get all users
 - `POST /api/users/signup` - create a user
 - `PUT /api/users/:id` - update a user
 - `POST /api/users/forgot-password` - request password reset
-- `POST /api/users/reset-password/:token` - reset password 
+- `POST /api/users/reset-password/:token` - reset password
 
-## Suggested Frontend First Flow
+## Suggested Frontend Integration Order
 
-Use this order during integration:
-
-1. Start the backend with Docker.
-2. Open `http://localhost:5000/api-docs` and confirm the server is running.
-3. Ensure the `ADMIN_*` env vars are set before the first startup on an empty database.
-4. Call `POST /api/users/login` with the admin credentials.
-5. Send the returned `accessToken` as a Bearer token to test protected APIs like profile and users list.
-6. When needed, call `POST /api/users/refresh-token` with the stored `refreshToken`.
+1. Create the backend setup folder.
+2. Add the project files or use the shared image.
+3. Create the `.env` file.
+4. Pull the Docker image if you are using the image-based flow.
+5. Start the backend.
+6. Open Swagger and confirm the server is running.
+7. Log in with the bootstrap admin.
+8. Store `accessToken` and `refreshToken` in the frontend.
+9. Send `Authorization: Bearer <accessToken>` for protected routes.
+10. If a protected request fails because the access token expired, call `/refresh-token`.
+11. Replace the stored tokens after every successful refresh.
+12. On logout, clear the stored tokens in the frontend.
 
 ## Troubleshooting
 
@@ -137,11 +226,34 @@ If the backend does not start:
 - check that `.env` exists in the project root
 - check that `MONGODB_URI` is valid and reachable
 - check that port `5000` is free
+- check that the required `ADMIN_*` values are present for first startup on an empty database
 
-If login or protected routes fail:
+If login fails:
 
-- verify the initial admin env vars are set correctly
-- verify the initial admin was created successfully during server startup
-- verify you are using the correct email and password
-- verify the `Authorization: Bearer <accessToken>` header is being sent correctly from the frontend
-- verify you are storing and sending the latest refresh token after each refresh call
+- verify the admin user was created on first startup
+- verify the email and password are correct
+- verify the database is connected properly
+
+If protected routes fail:
+
+- verify the `Authorization: Bearer <accessToken>` header is being sent
+- verify the access token is not expired
+- verify the user has permission for that route
+
+If refresh fails:
+
+- verify the correct `refreshToken` is being sent
+- verify you are storing the latest refresh token returned by `/refresh-token`
+- verify the refresh token has not expired
+
+## Final Frontend Notes
+
+The frontend is responsible for token handling now.
+
+That means the frontend must:
+
+- store the login tokens
+- attach the access token to protected requests
+- call `/refresh-token` when needed
+- replace old tokens after refresh
+- clear tokens on logout
