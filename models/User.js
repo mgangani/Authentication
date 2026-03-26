@@ -20,10 +20,6 @@ const userSchema = new mongoose.Schema({
     default: "employee",
     required: true,
   },
-  refreshToken: {
-    type: String,
-    default: null,
-  },
   profileImage: {
     url: String, // Cloudinary URL — use this to display the image
     publicId: String, // Cloudinary public_id — use this to delete the image

@@ -26,12 +26,12 @@ const swaggerDefinition = {
   ],
   components: {
     securitySchemes: {
-      cookieAuth: {
-        type: "apiKey",
-        in: "cookie",
-        name: "accessToken",
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
         description:
-          "Cookie-based auth used by the backend. Useful when testing over HTTPS.",
+          "Send the access token in the Authorization header as `Bearer <token>`.",
       },
     },
     schemas: {
@@ -235,6 +235,17 @@ const swaggerDefinition = {
           },
           user: {
             $ref: "#/components/schemas/PublicUser",
+          },
+        },
+      },
+      RefreshTokenRequest: {
+        type: "object",
+        required: ["refreshToken"],
+        properties: {
+          refreshToken: {
+            type: "string",
+            example:
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example.refresh.token",
           },
         },
       },

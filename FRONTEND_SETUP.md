@@ -100,12 +100,18 @@ The login response returns:
 - `refreshToken`
 - `user`
 
-The backend also sets auth cookies.
+Use the `accessToken` in the `Authorization` header for protected routes:
+
+```bash
+Authorization: Bearer <accessToken>
+```
+
+When the access token expires, call `POST /api/users/refresh-token` with the current `refreshToken` to receive a new access token and refresh token pair.
 
 ## Common API Endpoints For Frontend Work
 
 - `POST /api/users/login` - login
-- `POST /api/users/logout` - logout
+- `POST /api/users/refresh-token` - rotate access and refresh tokens
 - `GET /api/users/profile` - get current logged-in user
 - `GET /api/users` - get all users
 - `POST /api/users/signup` - create a user
@@ -121,7 +127,8 @@ Use this order during integration:
 2. Open `http://localhost:5000/api-docs` and confirm the server is running.
 3. Ensure the `ADMIN_*` env vars are set before the first startup on an empty database.
 4. Call `POST /api/users/login` with the admin credentials.
-5. Use the returned auth state to test protected APIs like profile and users list.
+5. Send the returned `accessToken` as a Bearer token to test protected APIs like profile and users list.
+6. When needed, call `POST /api/users/refresh-token` with the stored `refreshToken`.
 
 ## Troubleshooting
 
@@ -136,4 +143,5 @@ If login or protected routes fail:
 - verify the initial admin env vars are set correctly
 - verify the initial admin was created successfully during server startup
 - verify you are using the correct email and password
-- verify cookies or tokens are being sent correctly from the frontend
+- verify the `Authorization: Bearer <accessToken>` header is being sent correctly from the frontend
+- verify you are storing and sending the latest refresh token after each refresh call

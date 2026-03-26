@@ -9,6 +9,21 @@ import {
 import { sendEmail } from "../utils/mailer.js";
 import cloudinary from "../config/cloudinary.js";
 
+const sanitizeUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  profileImage: user.profileImage,
+});
+
+const issueTokens = (user) => {
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user._id);
+
+  return { accessToken, refreshToken };
+};
+
 export const signup = async (req, res) => {
   try {
     const { name, email: userEmail, password, role } = req.body;
@@ -51,23 +66,13 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user._id);
-    user.refreshToken = refreshToken;
-    await user.save();
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60,
-    });
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
+    const { accessToken, refreshToken } = issueTokens(user);
+
     return res.status(200).json({
       message: "Login successful",
       accessToken,
       refreshToken,
-      user,
+      user: sanitizeUser(user),
     });
   } catch (err) {
     return res.status(500).json({
@@ -77,29 +82,25 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = async (req, res) => {
+export const refreshToken = async (req, res) => {
   try {
-    const token = req.cookies.refreshToken;
+    const { refreshToken: currentRefreshToken } = req.body;
+    const decoded = verifyRefreshToken(currentRefreshToken);
+    const user = await User.findById(decoded.userId);
 
-    if (token) {
-      const decoded = await verifyRefreshToken(token);
-      const user = await User.findById(decoded.userId);
-
-      if (user) {
-        user.refreshToken = null;
-        await user.save();
-      }
+    if (!user) {
+      return res.status(401).json({ message: "Invalid refresh token" });
     }
 
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    const { accessToken } = issueTokens(user);
 
-    return res.status(200).json({ message: "Logged out successfully" });
-  } catch (err) {
-    return res.status(500).json({
-      message: "Failed to log out",
-      error: err.message,
+    return res.status(200).json({
+      message: "Token refreshed successfully",
+      accessToken,
+      user: sanitizeUser(user),
     });
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired refresh token" });
   }
 };
 

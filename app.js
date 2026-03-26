@@ -4,7 +4,6 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/user.routes.js";
-import cookieParser from "cookie-parser";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 import { seedRolePermissions } from "./permissionseed.js";
@@ -25,7 +24,6 @@ app.use(
   }),
 );
 app.use(express.json());
-app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

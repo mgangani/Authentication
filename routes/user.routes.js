@@ -2,7 +2,7 @@ import express from "express";
 import {
   signup,
   login,
-  logout,
+  refreshToken,
   getProfile,
   resetPassword,
   forgotPassword,
@@ -18,6 +18,7 @@ import { validate } from "../middlewares/validation.middleware.js";
 import {
   forgotPasswordSchema,
   loginSchema,
+  refreshTokenSchema,
   resetPasswordSchema,
   signupSchema,
   updateUserSchema,
@@ -34,7 +35,7 @@ router.post(
 );
 router.get("/", verifyJWT, authorize(PERMISSIONS.USERS_VIEW), getUsers);
 router.post("/login", validate(loginSchema), login);
-router.post("/logout", verifyJWT, logout);
+router.post("/refresh-token", validate(refreshTokenSchema), refreshToken);
 router.get(
   "/profile",
   verifyJWT,

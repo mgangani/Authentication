@@ -6,7 +6,7 @@
  *     description: Requires a caller with the `users:create` permission.
  *     tags: [Auth]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -43,7 +43,7 @@
  *     summary: Get all users
  *     tags: [Users]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Users fetched successfully
@@ -62,7 +62,7 @@
  * /api/users/login:
  *   post:
  *     summary: Log in a user
- *     description: Returns access and refresh tokens and also sets them as cookies.
+ *     description: Returns access and refresh tokens in the response body.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -87,24 +87,30 @@
 
 /**
  * @swagger
- * /api/users/logout:
+ * /api/users/refresh-token:
  *   post:
- *     summary: Log out the current user
+ *     summary: Refresh access and refresh tokens
+ *     description: Accepts the current refresh token and returns a new access token and refresh token.
  *     tags: [Auth]
- *     security:
- *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
  *     responses:
  *       200:
- *         description: Logged out successfully
+ *         description: Token refreshed successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/MessageResponse'
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Validation failed
  *       401:
- *         description: Unauthorized
- *       500:
- *         description: Server error
+ *         description: Invalid or expired refresh token
  */
+
 
 /**
  * @swagger
@@ -113,7 +119,7 @@
  *     summary: Get the authenticated user's profile
  *     tags: [Users]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Profile fetched successfully
@@ -138,7 +144,7 @@
  *     summary: Update a user by id
  *     tags: [Users]
  *     security:
- *       - cookieAuth: []
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id

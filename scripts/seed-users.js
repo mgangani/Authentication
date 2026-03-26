@@ -24,7 +24,6 @@ const buildUsers = async (totalUsers) => {
       email: `testuser${userNumber}@example.com`,
       password: hashedPassword,
       role: roles[index % roles.length],
-      refreshToken: null,
     };
   });
 };
