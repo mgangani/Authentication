@@ -9,6 +9,9 @@ import {
   updateUser,
   getUsers,
   createInitialAdmin,
+  uploadProfileImage,
+  getProfileImage,
+  deleteProfileImage,
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/jwt.js";
 import { authorize, authorizeOwnerOr } from "../middlewares/authorize.js";
@@ -22,6 +25,7 @@ import {
   signupSchema,
   updateUserSchema,
 } from "../validators/user.schema.js";
+import { upload } from "../config/multer.js";
 
 const router = express.Router();
 
@@ -238,7 +242,7 @@ router.get(
  *       400:
  *         description: Validation failed
  *       401:
- *         description: Unauthorized
+ *         description: Unauthoriz ed
  *       403:
  *         description: Forbidden
  *       404:
@@ -318,5 +322,20 @@ router.post(
  *         description: Server error
  */
 router.post("/forgot-password", validate(forgotPasswordSchema), forgotPassword);
+
+// Upload profile image
+router.post(
+  "/profile/image",
+  verifyJWT,
+  upload.single("profileImage"), // "profileImage" = the form field name
+  uploadProfileImage,
+);
+
+// Get/Download image by user ID - public route
+router.get("/profile/image/:id", getProfileImage);
+
+// Delete image
+router.delete("/profile/image", verifyJWT, deleteProfileImage);
+
 
 export default router;

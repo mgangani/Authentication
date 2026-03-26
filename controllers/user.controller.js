@@ -7,6 +7,8 @@ import {
   verifyAccessToken,
 } from "../utils/generateJWT.js";
 import { sendEmail } from "../utils/mailer.js";
+import fs from "fs";
+import path from "path";
 
 export const signup = async (req, res) => {
   try {
@@ -104,7 +106,7 @@ export const logout = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.userId).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -252,5 +254,97 @@ export const createInitialAdmin = async (req, res) => {
       message: "Failed to create initial admin",
       error: err.message,
     });
+  }
+};
+
+export const uploadProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.profileImage?.path && fs.existsSync(user.profileImage.path)) {
+      fs.unlinkSync(user.profileImage.path);
+    }
+
+    user.profileImage = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      path: req.file.path,
+    };
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Profile image uploaded successfully",
+      profileImage: user.profileImage,
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Upload failed", error: err.message });
+  }
+};
+
+// DOWNLOAD / SERVE profile image
+export const getProfileImage = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("profileImage");
+    if (!user || !user.profileImage?.path) {
+      return res.status(404).json({ message: "No profile image found" });
+    }
+
+    const filePath = user.profileImage.path;
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found on server" });
+    }
+
+    // res.sendFile() streams the file back to the client
+    // It needs an absolute path
+    // return res.sendFile(path.resolve(filePath));
+
+    // --- ALTERNATIVE: force browser to download instead of display ---
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${user.profileImage.originalName}"`,
+    );
+    return res.sendFile(path.resolve(filePath));
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Failed to get image", error: err.message });
+  }
+};
+
+// DELETE profile image
+export const deleteProfileImage = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user || !user.profileImage?.path) {
+      return res.status(404).json({ message: "No profile image to delete" });
+    }
+
+    // Delete from disk
+    if (fs.existsSync(user.profileImage.path)) {
+      fs.unlinkSync(user.profileImage.path);
+    }
+
+    // Clear from DB
+    user.profileImage = undefined;
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Profile image deleted successfully" });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Failed to delete image", error: err.message });
   }
 };

@@ -24,6 +24,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  profileImage: {
+    filename: String,
+    originalName: String,
+    mimetype: String,
+    size: Number,
+    path: String,
+  },
 });
 
 const User = mongoose.model("User", userSchema);

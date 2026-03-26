@@ -8,9 +8,13 @@ import cookieParser from "cookie-parser";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 import { seedRolePermissions } from "./permissionseed.js";
-
+import path from "path";
+import { fileURLToPath } from "url";
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 app.use(
   cors({
@@ -20,6 +24,9 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 
 app.use(
