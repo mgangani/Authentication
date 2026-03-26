@@ -10,7 +10,6 @@ import {
   getUsers,
   createInitialAdmin,
   uploadProfileImage,
-  getProfileImage,
   deleteProfileImage,
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/jwt.js";
@@ -330,9 +329,6 @@ router.post(
   upload.single("profileImage"), // "profileImage" = the form field name
   uploadProfileImage,
 );
-
-// Get/Download image by user ID - public route
-router.get("/profile/image/:id", getProfileImage);
 
 // Delete image
 router.delete("/profile/image", verifyJWT, deleteProfileImage);

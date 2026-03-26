@@ -25,12 +25,16 @@ const userSchema = new mongoose.Schema({
     default: null,
   },
   profileImage: {
-    filename: String,
-    originalName: String,
-    mimetype: String,
-    size: Number,
-    path: String,
+    url: String, // Cloudinary URL — use this to display the image
+    publicId: String, // Cloudinary public_id — use this to delete the image
   },
+  // profileImage: {
+  //   filename: String,
+  //   originalName: String,
+  //   mimetype: String,
+  //   size: Number,
+  //   path: String,
+  // },
 });
 
 const User = mongoose.model("User", userSchema);
