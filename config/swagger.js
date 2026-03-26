@@ -26,13 +26,6 @@ const swaggerDefinition = {
   ],
   components: {
     securitySchemes: {
-      bearerAuth: {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
-        description:
-          "Paste the access token returned by the login endpoint as a Bearer token.",
-      },
       cookieAuth: {
         type: "apiKey",
         in: "cookie",

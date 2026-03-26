@@ -6,7 +6,6 @@
  *     description: Requires a caller with the `users:create` permission.
  *     tags: [Users]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     requestBody:
  *       required: true
@@ -77,7 +76,6 @@
  *     summary: Get all users
  *     tags: [Users]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     responses:
  *       200:
@@ -127,7 +125,6 @@
  *     summary: Log out the current user
  *     tags: [Auth]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     responses:
  *       200:
@@ -149,7 +146,6 @@
  *     summary: Get the authenticated user's profile
  *     tags: [Users]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     responses:
  *       200:
@@ -175,7 +171,6 @@
  *     summary: Update a user by id
  *     tags: [Users]
  *     security:
- *       - bearerAuth: []
  *       - cookieAuth: []
  *     parameters:
  *       - in: path
