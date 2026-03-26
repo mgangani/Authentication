@@ -125,10 +125,29 @@ export const getProfile = async (req, res) => {
 
 export const getUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    // Extract query params with defaults
+    const page = Math.max(1, parseInt(req.query.page) || 1); // minimum page is 1
+    const limit = Math.min(200, parseInt(req.query.limit) || 10); // max 100 per page
+    const skip = (page - 1) * limit; // how many docs to skip
+
+    // Run both queries in parallel for performance
+    const [users, totalUsers] = await Promise.all([
+      User.find().select("-password").skip(skip).limit(limit),
+      User.countDocuments(),
+    ]);
+
+    const totalPages = Math.ceil(totalUsers / limit);
 
     return res.status(200).json({
       message: "Users fetched successfully",
+      pagination: {
+        totalUsers,
+        totalPages,
+        currentPage: page,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
       users,
     });
   } catch (err) {
@@ -138,6 +157,7 @@ export const getUsers = async (req, res) => {
     });
   }
 };
+
 
 export const resetPassword = async (req, res) => {
   try {
