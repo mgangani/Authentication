@@ -27,12 +27,16 @@ PORT=5000
 MONGODB_URI=<your-mongodb-connection-string>
 JWT_SECRET=<your-jwt-secret>
 SENDGRID_API_KEY=<your-sendgrid-api-key>
+ADMIN_NAME=<initial-admin-name>
+ADMIN_EMAIL=<initial-admin-email>
+ADMIN_PASSWORD=<initial-admin-password>
 ```
 
 Notes:
 
 - `SENDGRID_API_KEY` is required only if you want to test the forgot-password email flow.
 - `MONGODB_URI` must point to a working MongoDB database before the app can start.
+- When the database has no users, the server creates the first admin automatically on startup using `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`.
 
 ## If You Are Given a Prebuilt Docker Image
 
@@ -48,42 +52,25 @@ docker run -p 5000:5000 --env-file .env meetgangani11/auth-app
 
 ## First-Time Setup
 
-On a fresh database, the first step is to create the initial admin user.
+On a fresh database, the backend creates the initial admin user automatically during startup.
 
-Use this endpoint:
+Set these env vars before starting the server:
 
-- `POST http://localhost:5000/api/users/setup-admin`
-
-Request body:
-
-```json
-{
-  "name": "Super Admin",
-  "email": "admin@example.com",
-  "password": "StrongPassword123"
-}
+```env
+ADMIN_NAME=Super Admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=StrongPassword123
 ```
 
 Important:
 
-- This works only once when there are `0` users in the database.
-- After the first admin is created, this endpoint will return an error if called again.
-
-Example using `curl`:
-
-```bash
-curl --request POST http://localhost:5000/api/users/setup-admin \
-  --header "Content-Type: application/json" \
-  --data '{
-    "name": "Super Admin",
-    "email": "admin@example.com",
-    "password": "StrongPassword123"
-  }'
-```
+- This bootstrap runs only when there are `0` users in the database.
+- If users already exist, the server does not create another admin automatically.
+- If the database is empty and any of the `ADMIN_*` values are missing, the server startup fails until they are provided.
 
 ## Login After Admin Creation
 
-After the admin is created, log in with:
+After the server boots and creates the admin, log in with:
 
 - `POST http://localhost:5000/api/users/login`
 
@@ -117,7 +104,6 @@ The backend also sets auth cookies.
 
 ## Common API Endpoints For Frontend Work
 
-- `POST /api/users/setup-admin` - create the first admin
 - `POST /api/users/login` - login
 - `POST /api/users/logout` - logout
 - `GET /api/users/profile` - get current logged-in user
@@ -133,7 +119,7 @@ Use this order during integration:
 
 1. Start the backend with Docker.
 2. Open `http://localhost:5000/api-docs` and confirm the server is running.
-3. Call `POST /api/users/setup-admin` once.
+3. Ensure the `ADMIN_*` env vars are set before the first startup on an empty database.
 4. Call `POST /api/users/login` with the admin credentials.
 5. Use the returned auth state to test protected APIs like profile and users list.
 
@@ -147,6 +133,7 @@ If the backend does not start:
 
 If login or protected routes fail:
 
-- verify the initial admin was created successfully
+- verify the initial admin env vars are set correctly
+- verify the initial admin was created successfully during server startup
 - verify you are using the correct email and password
 - verify cookies or tokens are being sent correctly from the frontend

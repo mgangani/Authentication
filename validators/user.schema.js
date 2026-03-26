@@ -11,8 +11,6 @@ export const signupSchema = z.object({
   role: roleSchema.optional(),
 });
 
-export const setupAdminSchema = signupSchema.omit({ role: true });
-
 export const loginSchema = z.object({
   email: z.email({ message: "Invalid email" }),
   password: z.string().min(1, { message: "Password is required" }),

@@ -4,7 +4,7 @@
  *   post:
  *     summary: Create a new user account
  *     description: Requires a caller with the `users:create` permission.
- *     tags: [Users]
+ *     tags: [Auth]
  *     security:
  *       - cookieAuth: []
  *     requestBody:
@@ -32,39 +32,6 @@
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
- *       500:
- *         description: Server error
- */
-
-/**
- * @swagger
- * /api/users/setup-admin:
- *   post:
- *     summary: Create the first admin user
- *     description: This endpoint works only when there are zero users in the database.
- *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/SignupRequest'
- *             example:
- *               name: Super Admin
- *               email: admin@example.com
- *               password: StrongPassword123
- *     responses:
- *       201:
- *         description: Initial admin created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/UserResponse'
- *       400:
- *         description: Validation failed or user already exists
- *       403:
- *         description: Initial admin already created
  *       500:
  *         description: Server error
  */

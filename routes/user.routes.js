@@ -8,7 +8,6 @@ import {
   forgotPassword,
   updateUser,
   getUsers,
-  createInitialAdmin,
   uploadProfileImage,
   deleteProfileImage,
 } from "../controllers/user.controller.js";
@@ -20,7 +19,6 @@ import {
   forgotPasswordSchema,
   loginSchema,
   resetPasswordSchema,
-  setupAdminSchema,
   signupSchema,
   updateUserSchema,
 } from "../validators/user.schema.js";
@@ -34,7 +32,6 @@ router.post(
   validate(signupSchema),
   signup,
 );
-router.post("/setup-admin", validate(setupAdminSchema), createInitialAdmin);
 router.get("/", verifyJWT, authorize(PERMISSIONS.USERS_VIEW), getUsers);
 router.post("/login", validate(loginSchema), login);
 router.post("/logout", verifyJWT, logout);
