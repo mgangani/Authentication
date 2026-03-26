@@ -15,6 +15,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+import paymentRoutes from "./routes/payment.routes.js";
 
 
 app.use(
@@ -43,7 +44,7 @@ app.get("/api-docs.json", (_req, res) => {
 });
 
 app.use("/api/users", userRoutes);
-
+app.use("/api/payments", paymentRoutes);
 const bootstrapAdminUser = async () => {
   const userCount = await User.countDocuments();
   if (userCount > 0) {
