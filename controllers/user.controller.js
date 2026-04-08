@@ -8,6 +8,8 @@ import {
 } from "../utils/generateJWT.js";
 import { sendEmail } from "../utils/mailer.js";
 import cloudinary from "../config/cloudinary.js";
+import { regex } from "zod";
+import Payment from "../models/Payment.js";
 
 const sanitizeUser = (user) => ({
   _id: user._id,
@@ -100,7 +102,9 @@ export const refreshToken = async (req, res) => {
       user: sanitizeUser(user),
     });
   } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired refresh token" });
+    return res
+      .status(401)
+      .json({ message: "Invalid or expired refresh token" });
   }
 };
 
@@ -126,31 +130,121 @@ export const getProfile = async (req, res) => {
 
 export const getUsers = async (req, res) => {
   try {
-    // Extract query params with defaults
-    const page = Math.max(1, parseInt(req.query.page) || 1); // minimum page is 1
-    const limit = Math.min(200, parseInt(req.query.limit) || 10); // max 100 per page
-    const skip = (page - 1) * limit; // how many docs to skip
+    const page = Math.max(1, parseInt(req.query.page) || 1);
 
-    // Run both queries in parallel for performance
-    const [users, totalUsers] = await Promise.all([
-      User.find().select("-password").skip(skip).limit(limit),
-      User.countDocuments(),
+    const limit =
+      req.query.limit !== undefined
+        ? Math.min(200, parseInt(req.query.limit))
+        : 10;
+
+    if (limit <= 0) {
+      return res.status(400).json({
+        message: "Limit must be greater than 0",
+      });
+    }
+    const skip = (page - 1) * limit;
+
+    const filters = {};
+
+    const search = req.query.search || "";
+
+    if (search) {
+      filters["user.name"] = { $regex: search, $options: "i" };
+    }
+
+    if (req.query.role) {
+      filters["user.role"] = { $in: [req.query.role] };
+    } else {
+      filters["user.role"] = {
+        $in: ["employee", "manager", "admin"],
+      };
+    }
+    if (req.query.paymentAmount) {
+      filters["amount"] = Number(req.query.paymentAmount);
+    }
+
+    if (req.query.paymentStatus) {
+      filters.status = { $in: [req.query.paymentStatus] };
+    } else {
+      filters.status = {
+        $in: ["pending", "succeeded", "failed", "refunded"],
+      };
+    }
+
+    const results = await Payment.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $match: filters,
+      },
+      {
+        $facet: {
+          data: [
+            {
+              $project: {
+                _id: 0,
+                user: {
+                  id: "$user._id",
+                  name: "$user.name",
+                  email: "$user.email",
+                  role: "$user.role",
+                },
+                payment: {
+                  id: "$_id",
+                  amount: "$amount",
+                  status: "$status",
+                },
+              },
+            },
+            { $skip: skip },
+            { $limit: limit },
+          ],
+          pagination: [
+            { $count: "total" },
+            {
+              $addFields: {
+                totalPages: { $ceil: { $divide: ["$total", limit] } },
+              },
+            },
+            { $addFields: { hasNextPage: { $lt: [page, "$totalPages"] } } },
+            { $addFields: { hasPrevPage: { $gt: [page, 1] } } },
+          ],
+        },
+      },
     ]);
-
-    const totalPages = Math.ceil(totalUsers / limit);
 
     return res.status(200).json({
       message: "Users fetched successfully",
-      pagination: {
-        totalUsers,
-        totalPages,
-        currentPage: page,
-        limit,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
-      users,
+      data: results[0].data,
+      pagination: results[0].pagination,
     });
+
+    // const [users, totalUsers] = await Promise.all([
+    //   User.find(searchQuery).select("-password").skip(skip).limit(limit),
+    //   User.countDocuments(searchQuery),
+    // ]);
+
+    // const totalPages = Math.ceil(totalUsers / limit);
+
+    // return res.status(200).json({
+    //   message: "Users fetched successfully",
+    //   pagination: {
+    //     totalUsers,
+    //     totalPages,
+    //     currentPage: page,
+    //     limit,
+    //     hasNextPage: page < totalPages,
+    //     hasPrevPage: page > 1,
+    //   },
+    //   users,
+    // });
   } catch (err) {
     return res.status(500).json({
       message: "Failed to fetch users",
@@ -158,7 +252,6 @@ export const getUsers = async (req, res) => {
     });
   }
 };
-
 
 export const resetPassword = async (req, res) => {
   try {
